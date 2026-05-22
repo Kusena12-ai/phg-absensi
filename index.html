@@ -165,8 +165,9 @@ td{padding:10px 12px;border-top:1px solid #f5f5f3}
 <div class="screen" id="screenHome">
   <nav>
     <div class="nav-title">PANNA <span>HRIS</span></div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:6px;">
       <span class="nav-user" id="navUser"></span>
+      <button id="btnBackAdmin" onclick="backToAdmin()" style="display:none;background:#444;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer">← Dashboard</button>
       <button class="logout-btn" onclick="logout()">Keluar</button>
     </div>
   </nav>
@@ -257,8 +258,9 @@ td{padding:10px 12px;border-top:1px solid #f5f5f3}
 <div class="screen" id="screenAdmin">
   <nav>
     <div class="nav-title">PANNA <span>HRIS</span></div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:6px;">
       <span class="nav-user" id="adminNavUser"></span>
+      <button onclick="switchToAbsen()" style="background:var(--gold);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">📍 Absen</button>
       <button class="logout-btn" onclick="logout()">Keluar</button>
     </div>
   </nav>
@@ -381,14 +383,30 @@ function initUser() {
     document.getElementById('adminNavUser').textContent = currentUser.nama;
     loadAdminData();
   } else {
-    showScreen('screenHome');
-    document.getElementById('navUser').textContent = currentUser.outlet;
-    document.getElementById('greetName').textContent = 'Halo, ' + currentUser.nama.split(' ')[0] + '!';
-    document.getElementById('greetSub').textContent = currentUser.jabatan + ' · ' + currentUser.outlet;
-    startCamera();
-    startGPS();
-    loadTodayStatus();
+    initAbsenScreen();
   }
+}
+
+function initAbsenScreen() {
+  showScreen('screenHome');
+  document.getElementById('navUser').textContent = currentUser.outlet;
+  document.getElementById('greetName').textContent = 'Halo, ' + currentUser.nama.split(' ')[0] + '!';
+  document.getElementById('greetSub').textContent = currentUser.jabatan + ' · ' + currentUser.outlet;
+  startCamera();
+  startGPS();
+  loadTodayStatus();
+}
+
+function switchToAbsen() {
+  // Admin/HRD switch to attendance screen
+  document.getElementById('btnBackAdmin').style.display = 'block';
+  initAbsenScreen();
+}
+
+function backToAdmin() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  showScreen('screenAdmin');
+  loadAdminData();
 }
 
 // ===== CAMERA =====
