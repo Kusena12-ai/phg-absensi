@@ -175,38 +175,68 @@ td{padding:10px 12px;border-top:1px solid #f5f5f3}
       <p class="date-display" id="dateDisplay"></p>
       <div class="time-display" id="clockDisplay">00:00</div>
       <h2 id="greetName">Halo, Karyawan!</h2>
-      <p id="greetSub">Selamat datang di PHG</p>
+      <p id="greetSub" style="color:var(--muted);font-size:13px;margin-top:2px"></p>
     </div>
 
-    <div class="status-card">
+    <div class="status-card" style="margin-bottom:14px;">
       <div class="label">Status Hari Ini</div>
       <div class="status-row">
         <div>
-          <div style="font-size:13px;color:var(--muted)">Masuk: <span id="jamMasuk" style="font-weight:600;color:var(--dark)">—</span></div>
-          <div style="font-size:13px;color:var(--muted);margin-top:4px">Pulang: <span id="jamPulang" style="font-weight:600;color:var(--dark)">—</span></div>
+          <div style="font-size:13px;color:var(--muted)">Masuk: <strong id="jamMasuk" style="color:var(--dark)">—</strong></div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Pulang: <strong id="jamPulang" style="color:var(--dark)">—</strong></div>
         </div>
         <span class="status-badge badge-belum" id="statusBadge">Belum Absen</span>
       </div>
     </div>
 
-    <div id="gpsStatus" class="gps-status loading">
-      <div class="gps-dot loading"></div>
-      <span>Mendeteksi lokasi...</span>
+    <!-- STEPS -->
+    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border);">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Langkah Absen</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;" id="step1">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0" id="step1num">1</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">Deteksi Lokasi GPS</div>
+          <div style="font-size:11px;color:var(--muted)" id="step1msg">Mengaktifkan GPS...</div>
+        </div>
+        <span id="step1icon">⏳</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;" id="step2">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0" id="step2num">2</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">Foto Selfie</div>
+          <div style="font-size:11px;color:var(--muted)" id="step2msg">Ambil foto untuk verifikasi</div>
+        </div>
+        <span id="step2icon">⏳</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0" id="step3num">3</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">Submit Absensi</div>
+          <div style="font-size:11px;color:var(--muted)" id="step3msg">Klik tombol check-in</div>
+        </div>
+        <span id="step3icon">⏳</span>
+      </div>
     </div>
 
     <!-- KAMERA -->
-    <div class="camera-box" id="cameraBox">
+    <div class="camera-box" id="cameraBox" style="display:none">
       <video id="videoPreview" autoplay playsinline></video>
       <div class="camera-overlay"></div>
     </div>
-    <img id="photoPreview" alt="Foto selfie">
-    <div style="text-align:center;margin-bottom:12px;" id="captureArea">
+    <img id="photoPreview" alt="Foto selfie" style="display:none;width:100%;border-radius:14px;margin-bottom:12px">
+    <div id="captureArea" style="margin-bottom:12px;display:none">
       <button class="capture-btn" onclick="capturePhoto()">📷</button>
     </div>
+    <button id="btnOpenCamera" class="btn-secondary" onclick="openCamera()" style="display:none">📷 Buka Kamera Selfie</button>
 
-    <button class="btn-main" id="btnCheckin" onclick="doCheckIn()" disabled>📍 Check In</button>
-    <button class="btn-main btn-out" id="btnCheckout" onclick="doCheckOut()" style="display:none" disabled>🏠 Check Out</button>
-    <button class="btn-secondary" onclick="showRiwayat()">📋 Lihat Riwayat Absensi</button>
+    <div id="gpsStatus" class="gps-status loading" style="margin-bottom:12px;">
+      <div class="gps-dot loading"></div>
+      <span>Mendeteksi lokasi GPS...</span>
+    </div>
+
+    <button class="btn-main" id="btnCheckin" onclick="doCheckIn()" style="display:none" disabled>📍 Check In Sekarang</button>
+    <button class="btn-main btn-out" id="btnCheckout" onclick="doCheckOut()" style="display:none" disabled>🏠 Check Out Sekarang</button>
+    <button class="btn-secondary" onclick="showRiwayat()" style="margin-top:4px">📋 Riwayat Absensi Saya</button>
   </div>
 </div>
 
@@ -363,11 +393,23 @@ function initUser() {
 
 // ===== CAMERA =====
 async function startCamera() {
+  // Just show the camera button - don't auto-open
+  document.getElementById('btnOpenCamera').style.display = 'block';
+  updateSteps();
+}
+
+async function openCamera() {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});
     document.getElementById('videoPreview').srcObject = stream;
     document.getElementById('cameraBox').style.display = 'block';
-  } catch(e) { showToast('Kamera tidak dapat diakses'); }
+    document.getElementById('captureArea').style.display = 'block';
+    document.getElementById('btnOpenCamera').style.display = 'none';
+    updateSteps();
+  } catch(e) { 
+    showToast('❌ Izinkan akses kamera di browser');
+    updateSteps();
+  }
 }
 
 function capturePhoto() {
@@ -412,22 +454,47 @@ function updateGPS(ok, msg) {
   const el = document.getElementById('gpsStatus');
   el.className = 'gps-status ' + (ok ? 'ok' : 'fail');
   el.innerHTML = '<div class="gps-dot ' + (ok ? 'ok' : 'fail') + '"></div><span>' + msg + '</span>';
+  updateSteps();
 }
 
-function checkReady() {
-  const hasFoto = !!photoBase64;
+function updateSteps() {
   const hasGPS = !!currentLat;
-  const status = document.getElementById('statusBadge').textContent;
-  const sudahMasuk = status !== 'Belum Absen';
-  const sudahPulang = !!document.getElementById('jamPulang').textContent && document.getElementById('jamPulang').textContent !== '—';
-  
-  document.getElementById('btnCheckin').disabled = !(hasFoto && hasGPS) || sudahMasuk;
-  if (sudahMasuk && !sudahPulang) {
+  const hasFoto = !!photoBase64;
+  const statusEl = document.getElementById('statusBadge');
+  const sudahMasuk = statusEl && statusEl.textContent !== 'Belum Absen';
+
+  // Step 1: GPS
+  document.getElementById('step1num').style.background = hasGPS ? 'var(--green)' : (gpsOk === false ? 'var(--red)' : '#e65100');
+  document.getElementById('step1num').style.color = '#fff';
+  document.getElementById('step1msg').textContent = hasGPS ? 'Lokasi terdeteksi ✓' : 'Aktifkan GPS di HP Anda';
+  document.getElementById('step1icon').textContent = hasGPS ? '✅' : '⏳';
+
+  // Step 2: Foto
+  document.getElementById('step2num').style.background = hasFoto ? 'var(--green)' : '#e0e0e0';
+  document.getElementById('step2num').style.color = hasFoto ? '#fff' : '#666';
+  document.getElementById('step2msg').textContent = hasFoto ? 'Foto sudah diambil ✓' : 'Klik tombol kamera di bawah';
+  document.getElementById('step2icon').textContent = hasFoto ? '✅' : '📷';
+
+  // Step 3: Ready
+  const ready = hasGPS && hasFoto;
+  document.getElementById('step3num').style.background = ready ? 'var(--gold)' : '#e0e0e0';
+  document.getElementById('step3num').style.color = ready ? '#fff' : '#666';
+  document.getElementById('step3msg').textContent = ready ? 'Siap! Klik tombol absen ↓' : 'Selesaikan langkah 1 & 2';
+  document.getElementById('step3icon').textContent = ready ? '✅' : '⏳';
+
+  // Buttons
+  if (!sudahMasuk) {
+    document.getElementById('btnCheckin').style.display = 'block';
+    document.getElementById('btnCheckin').disabled = !ready;
+    document.getElementById('btnCheckout').style.display = 'none';
+  } else {
     document.getElementById('btnCheckin').style.display = 'none';
     document.getElementById('btnCheckout').style.display = 'block';
-    document.getElementById('btnCheckout').disabled = !(hasFoto && hasGPS);
+    document.getElementById('btnCheckout').disabled = !ready;
   }
 }
+
+function checkReady() { updateSteps(); }
 
 // ===== TODAY STATUS =====
 async function loadTodayStatus() {
