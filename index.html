@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PHG Absensi</title>
+<style>
+:root{--gold:#c9a96e;--dark:#1a1a1a;--bg:#f5f5f3;--white:#fff;--border:#e5e5e5;--red:#e53935;--green:#2e7d32;--muted:#888}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--dark);font-size:15px;min-height:100vh}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+
+/* LOGIN */
+.login-bg{background:linear-gradient(160deg,#1a1a1a 0%,#2d2d2d 100%);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px}
+.logo-box{text-align:center;margin-bottom:40px}
+.logo-box h1{color:#fff;font-size:22px;font-weight:800;letter-spacing:1px}
+.logo-box h1 span{color:var(--gold)}
+.logo-box p{color:#888;font-size:13px;margin-top:4px}
+.pin-card{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:340px}
+.pin-card h2{font-size:16px;font-weight:700;margin-bottom:6px;text-align:center}
+.pin-card p{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px}
+.pin-display{background:#f5f5f3;border-radius:10px;padding:14px;text-align:center;font-size:28px;letter-spacing:12px;margin-bottom:16px;min-height:56px;border:2px solid var(--border);font-weight:700}
+.pin-display.error{border-color:var(--red);color:var(--red)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.numpad button{background:#f5f5f3;border:none;border-radius:12px;padding:16px;font-size:20px;font-weight:600;cursor:pointer;transition:background .1s}
+.numpad button:active{background:#e0e0e0}
+.numpad .btn-del{background:#fff3e0;color:#e65100}
+.numpad .btn-ok{background:var(--gold);color:#fff}
+.numpad .btn-ok:active{background:#b8913d}
+
+/* NAVBAR */
+nav{background:var(--dark);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+nav .nav-title{color:#fff;font-size:15px;font-weight:700}
+nav .nav-title span{color:var(--gold)}
+nav .nav-user{font-size:12px;color:#aaa}
+.logout-btn{background:none;border:1px solid #444;color:#aaa;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer}
+
+/* HOME - KARYAWAN */
+.home-content{padding:20px 16px;flex:1}
+.greeting{margin-bottom:20px}
+.greeting h2{font-size:20px;font-weight:700}
+.greeting p{font-size:13px;color:var(--muted);margin-top:2px}
+.status-card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid var(--border)}
+.status-card .label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.status-row{display:flex;justify-content:space-between;align-items:center}
+.status-badge{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.badge-belum{background:#fff3e0;color:#e65100}
+.badge-hadir{background:#e8f5e9;color:var(--green)}
+.badge-terlambat{background:#fce4ec;color:var(--red)}
+.time-display{font-size:32px;font-weight:700;color:var(--dark);text-align:center;padding:16px 0;font-variant-numeric:tabular-nums}
+.date-display{text-align:center;color:var(--muted);font-size:13px;margin-bottom:4px}
+
+/* CAMERA */
+.camera-box{position:relative;background:#000;border-radius:16px;overflow:hidden;margin-bottom:16px}
+#videoPreview{width:100%;display:block;transform:scaleX(-1)}
+.camera-overlay{position:absolute;inset:0;border:3px solid var(--gold);border-radius:16px;pointer-events:none}
+.capture-btn{width:72px;height:72px;background:var(--gold);border:4px solid #fff;border-radius:50%;cursor:pointer;margin:0 auto;display:block;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.capture-btn:active{transform:scale(0.95)}
+#photoPreview{width:100%;border-radius:16px;display:none}
+
+/* BUTTONS */
+.btn-main{width:100%;padding:16px;background:var(--gold);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:background .15s}
+.btn-main:active{background:#b8913d}
+.btn-main:disabled{background:#ccc;cursor:not-allowed}
+.btn-main.btn-out{background:var(--dark)}
+.btn-main.btn-out:active{background:#333}
+.btn-secondary{width:100%;padding:14px;background:#fff;color:var(--dark);border:1px solid var(--border);border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}
+
+/* GPS STATUS */
+.gps-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px}
+.gps-status.ok{background:#e8f5e9;color:var(--green)}
+.gps-status.fail{background:#fce4ec;color:var(--red)}
+.gps-status.loading{background:#fff3e0;color:#e65100}
+.gps-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.gps-dot.ok{background:var(--green)}
+.gps-dot.fail{background:var(--red)}
+.gps-dot.loading{background:#e65100;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* RIWAYAT */
+.section-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--dark)}
+.record-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.record-date{font-size:13px;font-weight:600}
+.record-times{font-size:12px;color:var(--muted);margin-top:2px}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-hadir{background:var(--green)}
+.dot-terlambat{background:#ff9800}
+.dot-alpha{background:var(--red)}
+
+/* ADMIN */
+.admin-tabs{display:flex;border-bottom:2px solid var(--border);background:#fff}
+.admin-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:none}
+.admin-tab.active{color:var(--gold);border-bottom:2px solid var(--gold)}
+.tab-content{display:none;padding:16px}
+.tab-content.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-box{background:#fff;border-radius:12px;padding:14px;text-align:center;border:1px solid var(--border)}
+.stat-box .num{font-size:24px;font-weight:800;color:var(--dark)}
+.stat-box .lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
+.filter-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:12px;white-space:nowrap;cursor:pointer;flex-shrink:0}
+.filter-chip.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.table-wrap{background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f5f5f3;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted)}
+td{padding:10px 12px;border-top:1px solid #f5f5f3}
+.pill{padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.pill-hadir{background:#e8f5e9;color:var(--green)}
+.pill-terlambat{background:#fff3e0;color:#e65100}
+.pill-alpha{background:#fce4ec;color:var(--red)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;display:none}
+.loading-overlay.show{display:flex}
+.spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.photo-thumb{width:48px;height:48px;object-fit:cover;border-radius:8px;cursor:pointer}
+.no-data{text-align:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- ===== LOGIN ===== -->
+<div class="screen active" id="screenLogin">
+  <div class="login-bg">
+    <div class="logo-box">
+      <h1>PANNA <span>HOSPITALITY</span></h1>
+      <p>Sistem Absensi Karyawan</p>
+    </div>
+    <div class="pin-card">
+      <h2>Masukkan PIN Absen</h2>
+      <p>PIN 5 digit diberikan oleh HRD</p>
+      <div class="pin-display" id="pinDisplay">_ _ _ _ _</div>
+      <div class="numpad">
+        <button onclick="pinInput('1')">1</button>
+        <button onclick="pinInput('2')">2</button>
+        <button onclick="pinInput('3')">3</button>
+        <button onclick="pinInput('4')">4</button>
+        <button onclick="pinInput('5')">5</button>
+        <button onclick="pinInput('6')">6</button>
+        <button onclick="pinInput('7')">7</button>
+        <button onclick="pinInput('8')">8</button>
+        <button onclick="pinInput('9')">9</button>
+        <button class="btn-del" onclick="pinDel()">⌫</button>
+        <button onclick="pinInput('0')">0</button>
+        <button class="btn-ok" onclick="pinSubmit()">✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KARYAWAN HOME ===== -->
+<div class="screen" id="screenHome">
+  <nav>
+    <div class="nav-title">PANNA <span>HRIS</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="nav-user" id="navUser"></span>
+      <button class="logout-btn" onclick="logout()">Keluar</button>
+    </div>
+  </nav>
+  <div class="home-content">
+    <div class="greeting">
+      <p class="date-display" id="dateDisplay"></p>
+      <div class="time-display" id="clockDisplay">00:00</div>
+      <h2 id="greetName">Halo, Karyawan!</h2>
+      <p id="greetSub">Selamat datang di PHG</p>
+    </div>
+
+    <div class="status-card">
+      <div class="label">Status Hari Ini</div>
+      <div class="status-row">
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Masuk: <span id="jamMasuk" style="font-weight:600;color:var(--dark)">—</span></div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Pulang: <span id="jamPulang" style="font-weight:600;color:var(--dark)">—</span></div>
+        </div>
+        <span class="status-badge badge-belum" id="statusBadge">Belum Absen</span>
+      </div>
+    </div>
+
+    <div id="gpsStatus" class="gps-status loading">
+      <div class="gps-dot loading"></div>
+      <span>Mendeteksi lokasi...</span>
+    </div>
+
+    <!-- KAMERA -->
+    <div class="camera-box" id="cameraBox">
+      <video id="videoPreview" autoplay playsinline></video>
+      <div class="camera-overlay"></div>
+    </div>
+    <img id="photoPreview" alt="Foto selfie">
+    <div style="text-align:center;margin-bottom:12px;" id="captureArea">
+      <button class="capture-btn" onclick="capturePhoto()">📷</button>
+    </div>
+
+    <button class="btn-main" id="btnCheckin" onclick="doCheckIn()" disabled>📍 Check In</button>
+    <button class="btn-main btn-out" id="btnCheckout" onclick="doCheckOut()" style="display:none" disabled>🏠 Check Out</button>
+    <button class="btn-secondary" onclick="showRiwayat()">📋 Lihat Riwayat Absensi</button>
+  </div>
+</div>
+
+<!-- ===== RIWAYAT ===== -->
+<div class="screen" id="screenRiwayat">
+  <nav>
+    <div class="nav-title">Riwayat <span>Absensi</span></div>
+    <button class="logout-btn" onclick="showHome()">← Kembali</button>
+  </nav>
+  <div style="padding:16px">
+    <div class="stats-grid" id="summaryStats"></div>
+    <div class="section-title" id="riwayatTitle">Bulan Ini</div>
+    <div id="riwayatList"></div>
+  </div>
+</div>
+
+<!-- ===== ADMIN / HRD ===== -->
+<div class="screen" id="screenAdmin">
+  <nav>
+    <div class="nav-title">PANNA <span>HRIS</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="nav-user" id="adminNavUser"></span>
+      <button class="logout-btn" onclick="logout()">Keluar</button>
+    </div>
+  </nav>
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('today')">Hari Ini</button>
+    <button class="admin-tab" onclick="switchTab('monthly')">Bulanan</button>
+    <button class="admin-tab" onclick="switchTab('karyawan')">Karyawan</button>
+  </div>
+
+  <div class="tab-content active" id="tabToday" style="padding:16px">
+    <div class="filter-row" id="outletFilter"></div>
+    <div class="stats-grid" id="todayStats"></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Nama</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr></thead>
+      <tbody id="todayTable"></tbody></table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tabMonthly" style="padding:16px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="month" id="monthPicker" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px" onchange="loadMonthly()">
+      <button onclick="exportExcel()" style="padding:10px 14px;background:#217346;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">📊 Excel</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Nama</th><th>Hadir</th><th>Terlambat</th><th>Uang Kehadiran</th></tr></thead>
+      <tbody id="monthlyTable"></tbody></table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tabKaryawan" style="padding:16px">
+    <button onclick="showAddKaryawan()" class="btn-main" style="margin-bottom:14px;">+ Tambah Karyawan</button>
+    <div id="karyawanList"></div>
+  </div>
+</div>
+
+<!-- ===== ADD KARYAWAN MODAL ===== -->
+<div id="modalKaryawan" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;margin:0 auto;margin-top:40px">
+    <h3 style="margin-bottom:16px">Tambah Karyawan</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input id="ak_nama" placeholder="Nama lengkap" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+      <input id="ak_nik" placeholder="NIK" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+      <select id="ak_outlet" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+        <option value="">Pilih Outlet</option>
+        <option>Gaise Bistro & Brunch BSD</option>
+        <option>Gaise Bistro & Brunch PIK</option>
+        <option>3 Times Bakery & Kitchen</option>
+        <option>Sutbul Modern Korean Dining</option>
+        <option>Head Office</option>
+        <option>Central Kitchen</option>
+      </select>
+      <input id="ak_jabatan" placeholder="Jabatan" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+      <select id="ak_role" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+        <option value="Karyawan">Karyawan</option>
+        <option value="Leader">Leader</option>
+        <option value="Manager">Manager</option>
+        <option value="HRD">HRD</option>
+      </select>
+      <input id="ak_wa" placeholder="Nomor WhatsApp" style="padding:10px;border:1px solid var(--border);border-radius:8px">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="closeAddKaryawan()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-weight:600;cursor:pointer">Batal</button>
+      <button onclick="submitAddKaryawan()" style="flex:1;padding:12px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzBOeJ0w5yibKdXdCt94J1fEVNNh9laZSoEj1a_HGoQzztBkKhCD4MM1qtqayEVyeS4/exec';
+let currentUser = null, pinVal = '', photoBase64 = null, gpsOk = false, currentLat = null, currentLng = null, stream = null;
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  const opt = {timeZone:'Asia/Jakarta'};
+  const t = now.toLocaleTimeString('id-ID', {...opt, hour:'2-digit', minute:'2-digit'});
+  const d = now.toLocaleDateString('id-ID', {...opt, weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  document.getElementById('clockDisplay').textContent = t;
+  document.getElementById('dateDisplay').textContent = d;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== PIN =====
+function pinInput(n) {
+  if (pinVal.length >= 5) return;
+  pinVal += n;
+  updatePinDisplay();
+}
+function pinDel() { pinVal = pinVal.slice(0,-1); updatePinDisplay(); }
+function updatePinDisplay() {
+  const d = document.getElementById('pinDisplay');
+  d.classList.remove('error');
+  d.textContent = pinVal.replace(/./g,'●').padEnd(5,'_').split('').join(' ');
+}
+async function pinSubmit() {
+  if (pinVal.length !== 5) { showToast('Masukkan 5 digit PIN'); return; }
+  showLoading(true);
+  try {
+    const res = await apiGet({action:'login', pin:pinVal});
+    if (res.ok) {
+      currentUser = res.karyawan;
+      localStorage.setItem('phg_user', JSON.stringify(currentUser));
+      initUser();
+    } else {
+      document.getElementById('pinDisplay').classList.add('error');
+      document.getElementById('pinDisplay').textContent = 'PIN Salah';
+      pinVal = '';
+      setTimeout(updatePinDisplay, 1500);
+    }
+  } catch(e) { showToast('Gagal terhubung ke server'); }
+  showLoading(false);
+}
+
+function initUser() {
+  if (!currentUser) return;
+  const role = currentUser.role;
+  if (role === 'HRD' || role === 'Manager') {
+    showScreen('screenAdmin');
+    document.getElementById('adminNavUser').textContent = currentUser.nama;
+    loadAdminData();
+  } else {
+    showScreen('screenHome');
+    document.getElementById('navUser').textContent = currentUser.outlet;
+    document.getElementById('greetName').textContent = 'Halo, ' + currentUser.nama.split(' ')[0] + '!';
+    document.getElementById('greetSub').textContent = currentUser.jabatan + ' · ' + currentUser.outlet;
+    startCamera();
+    startGPS();
+    loadTodayStatus();
+  }
+}
+
+// ===== CAMERA =====
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+    document.getElementById('videoPreview').srcObject = stream;
+    document.getElementById('cameraBox').style.display = 'block';
+  } catch(e) { showToast('Kamera tidak dapat diakses'); }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('videoPreview');
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 240;
+  const ctx = canvas.getContext('2d');
+  ctx.translate(320, 0); ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, 320, 240);
+  photoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+  const preview = document.getElementById('photoPreview');
+  preview.src = photoBase64;
+  preview.style.display = 'block';
+  document.getElementById('cameraBox').style.display = 'none';
+  document.getElementById('captureArea').innerHTML = '<button onclick="retakePhoto()" style="background:none;border:1px solid var(--border);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:12px;">📷 Ambil Ulang</button>';
+  checkReady();
+}
+
+function retakePhoto() {
+  photoBase64 = null;
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('cameraBox').style.display = 'block';
+  document.getElementById('captureArea').innerHTML = '<button class="capture-btn" onclick="capturePhoto()">📷</button>';
+  checkReady();
+}
+
+// ===== GPS =====
+function startGPS() {
+  if (!navigator.geolocation) { updateGPS(false, 'GPS tidak tersedia di perangkat ini'); return; }
+  navigator.geolocation.watchPosition(pos => {
+    currentLat = pos.coords.latitude;
+    currentLng = pos.coords.longitude;
+    updateGPS(true, 'Lokasi terdeteksi (' + currentLat.toFixed(5) + ', ' + currentLng.toFixed(5) + ')');
+    checkReady();
+  }, err => {
+    updateGPS(false, 'GPS tidak dapat diakses. Aktifkan lokasi HP.');
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+
+function updateGPS(ok, msg) {
+  gpsOk = ok;
+  const el = document.getElementById('gpsStatus');
+  el.className = 'gps-status ' + (ok ? 'ok' : 'fail');
+  el.innerHTML = '<div class="gps-dot ' + (ok ? 'ok' : 'fail') + '"></div><span>' + msg + '</span>';
+}
+
+function checkReady() {
+  const hasFoto = !!photoBase64;
+  const hasGPS = !!currentLat;
+  const status = document.getElementById('statusBadge').textContent;
+  const sudahMasuk = status !== 'Belum Absen';
+  const sudahPulang = !!document.getElementById('jamPulang').textContent && document.getElementById('jamPulang').textContent !== '—';
+  
+  document.getElementById('btnCheckin').disabled = !(hasFoto && hasGPS) || sudahMasuk;
+  if (sudahMasuk && !sudahPulang) {
+    document.getElementById('btnCheckin').style.display = 'none';
+    document.getElementById('btnCheckout').style.display = 'block';
+    document.getElementById('btnCheckout').disabled = !(hasFoto && hasGPS);
+  }
+}
+
+// ===== TODAY STATUS =====
+async function loadTodayStatus() {
+  const today = new Date().toLocaleDateString('id-ID', {timeZone:'Asia/Jakarta'}).split('/').reverse().join('-').replace(/\//g,'-');
+  // Format: get today's date in YYYY-MM-DD
+  const d = new Date();
+  const todayStr = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Jakarta'});
+  try {
+    const res = await apiGet({action:'getAbsensi', karyawan_id: currentUser.id, tanggal: todayStr});
+    if (res.ok && res.data.length > 0) {
+      const r = res.data[0];
+      document.getElementById('jamMasuk').textContent = r.jam_masuk || '—';
+      document.getElementById('jamPulang').textContent = r.jam_pulang || '—';
+      const badge = document.getElementById('statusBadge');
+      if (r.status && r.status.includes('Terlambat')) {
+        badge.textContent = r.status;
+        badge.className = 'status-badge badge-terlambat';
+      } else if (r.status) {
+        badge.textContent = r.status;
+        badge.className = 'status-badge badge-hadir';
+      }
+      checkReady();
+    }
+  } catch(e) {}
+}
+
+// ===== CHECK IN/OUT =====
+async function doCheckIn() {
+  if (!photoBase64) { showToast('Ambil foto selfie dulu'); return; }
+  if (!currentLat) { showToast('Tunggu GPS terdeteksi'); return; }
+  showLoading(true);
+  try {
+    const res = await apiPost({
+      action: 'checkIn',
+      karyawan_id: currentUser.id,
+      nama: currentUser.nama,
+      outlet: currentUser.outlet,
+      lat: currentLat, lng: currentLng,
+      foto: photoBase64
+    });
+    if (res.ok) {
+      showToast('✅ ' + res.msg + ' Pukul ' + res.jam);
+      document.getElementById('jamMasuk').textContent = res.jam;
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = res.status;
+      badge.className = 'status-badge ' + (res.status.includes('Terlambat') ? 'badge-terlambat' : 'badge-hadir');
+      retakePhoto();
+      checkReady();
+    } else {
+      showToast('❌ ' + res.msg);
+    }
+  } catch(e) { showToast('Gagal terhubung ke server'); }
+  showLoading(false);
+}
+
+async function doCheckOut() {
+  if (!photoBase64) { showToast('Ambil foto selfie dulu'); return; }
+  if (!currentLat) { showToast('Tunggu GPS terdeteksi'); return; }
+  showLoading(true);
+  try {
+    const res = await apiPost({
+      action: 'checkOut',
+      karyawan_id: currentUser.id,
+      lat: currentLat, lng: currentLng,
+      foto: photoBase64
+    });
+    if (res.ok) {
+      showToast('✅ ' + res.msg + ' Pukul ' + res.jam);
+      document.getElementById('jamPulang').textContent = res.jam;
+      document.getElementById('btnCheckout').disabled = true;
+    } else {
+      showToast('❌ ' + res.msg);
+    }
+  } catch(e) { showToast('Gagal terhubung ke server'); }
+  showLoading(false);
+}
+
+// ===== RIWAYAT =====
+async function showRiwayat() {
+  showScreen('screenRiwayat');
+  const now = new Date();
+  const bulan = now.toLocaleDateString('sv-SE', {timeZone:'Asia/Jakarta'}).substring(0,7);
+  showLoading(true);
+  try {
+    const [absenRes, sumRes] = await Promise.all([
+      apiGet({action:'getAbsensi', karyawan_id:currentUser.id, bulan}),
+      apiGet({action:'getSummary', karyawan_id:currentUser.id, bulan})
+    ]);
+    if (sumRes.ok) {
+      document.getElementById('summaryStats').innerHTML = `
+        <div class="stat-box"><div class="num">${sumRes.hadir}</div><div class="lbl">Hadir</div></div>
+        <div class="stat-box"><div class="num" style="color:#ff9800">${sumRes.terlambat}</div><div class="lbl">Terlambat</div></div>
+        <div class="stat-box"><div class="num" style="color:var(--green)">Rp${(sumRes.uang_kehadiran/1000).toFixed(0)}k</div><div class="lbl">Uang Hadir</div></div>`;
+    }
+    if (absenRes.ok) {
+      const list = document.getElementById('riwayatList');
+      if (!absenRes.data.length) { list.innerHTML = '<div class="no-data">Belum ada data absensi bulan ini</div>'; return; }
+      list.innerHTML = absenRes.data.reverse().map(r => `
+        <div class="record-item">
+          <div>
+            <div class="record-date">${r.tanggal}</div>
+            <div class="record-times">Masuk: ${r.jam_masuk||'—'} · Pulang: ${r.jam_pulang||'—'}</div>
+          </div>
+          <div class="status-dot ${r.status&&r.status.includes('Terlambat')?'dot-terlambat':'dot-hadir'}"></div>
+        </div>`).join('');
+    }
+  } catch(e) {}
+  showLoading(false);
+}
+
+// ===== ADMIN =====
+let currentOutletFilter = 'all';
+async function loadAdminData() {
+  const today = new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Jakarta'});
+  showLoading(true);
+  try {
+    const res = await apiGet({action:'getAbsensi', outlet: currentUser.role === 'HRD' ? 'all' : currentUser.outlet, tanggal: today});
+    const kRes = await apiGet({action:'getKaryawan', outlet: currentUser.role === 'HRD' ? 'all' : currentUser.outlet});
+    
+    if (res.ok) renderTodayTable(res.data);
+    if (kRes.ok) renderKaryawanList(kRes.data);
+    
+    // Outlet filter chips
+    if (currentUser.role === 'HRD') {
+      const outlets = [...new Set(kRes.data.map(k => k.outlet))];
+      document.getElementById('outletFilter').innerHTML = 
+        ['Semua', ...outlets].map((o,i) => `<span class="filter-chip ${i===0?'active':''}" onclick="filterOutlet('${o}',this)">${o}</span>`).join('');
+    }
+  } catch(e) {}
+  showLoading(false);
+  const mp = document.getElementById('monthPicker');
+  mp.value = new Date().toLocaleDateString('sv-SE').substring(0,7);
+  loadMonthly();
+}
+
+function renderTodayTable(data) {
+  const hadir = data.filter(r => r.status && !r.status.includes('Terlambat')).length;
+  const terlambat = data.filter(r => r.status && r.status.includes('Terlambat')).length;
+  document.getElementById('todayStats').innerHTML = `
+    <div class="stat-box"><div class="num">${data.length}</div><div class="lbl">Total</div></div>
+    <div class="stat-box"><div class="num" style="color:var(--green)">${hadir}</div><div class="lbl">Hadir</div></div>
+    <div class="stat-box"><div class="num" style="color:#ff9800">${terlambat}</div><div class="lbl">Terlambat</div></div>`;
+  const filtered = currentOutletFilter === 'all' || currentOutletFilter === 'Semua' ? data : data.filter(r => r.outlet === currentOutletFilter);
+  document.getElementById('todayTable').innerHTML = filtered.length ? filtered.map(r => `
+    <tr>
+      <td><strong>${r.nama}</strong><br><span style="color:var(--muted);font-size:11px">${r.outlet}</span></td>
+      <td>${r.jam_masuk||'—'}</td>
+      <td>${r.jam_pulang||'—'}</td>
+      <td><span class="pill ${r.status&&r.status.includes('Terlambat')?'pill-terlambat':'pill-hadir'}">${r.status||'Hadir'}</span></td>
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Belum ada absensi hari ini</td></tr>';
+}
+
+function filterOutlet(outlet, el) {
+  currentOutletFilter = outlet;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  loadAdminData();
+}
+
+async function loadMonthly() {
+  const bulan = document.getElementById('monthPicker').value;
+  if (!bulan) return;
+  showLoading(true);
+  try {
+    const kRes = await apiGet({action:'getKaryawan', outlet: currentUser.role === 'HRD' ? 'all' : currentUser.outlet});
+    if (!kRes.ok) { showLoading(false); return; }
+    const rows = await Promise.all(kRes.data.map(async k => {
+      const s = await apiGet({action:'getSummary', karyawan_id: k.id, bulan});
+      return {...k, ...s};
+    }));
+    document.getElementById('monthlyTable').innerHTML = rows.map(r => `
+      <tr>
+        <td><strong>${r.nama}</strong><br><span style="color:var(--muted);font-size:11px">${r.outlet}</span></td>
+        <td style="color:var(--green);font-weight:700">${r.hadir||0}</td>
+        <td style="color:#ff9800">${r.terlambat||0}</td>
+        <td style="font-weight:600">Rp ${((r.uang_kehadiran||0)/1000).toFixed(0)}k</td>
+      </tr>`).join('');
+  } catch(e) {}
+  showLoading(false);
+}
+
+function exportExcel() {
+  showToast('Export Excel — fitur segera tersedia');
+}
+
+function renderKaryawanList(data) {
+  document.getElementById('karyawanList').innerHTML = data.map(k => `
+    <div class="record-item">
+      <div>
+        <div class="record-date">${k.nama}</div>
+        <div class="record-times">${k.jabatan} · ${k.outlet}</div>
+      </div>
+      <span class="pill pill-hadir">${k.role}</span>
+    </div>`).join('') || '<div class="no-data">Belum ada karyawan</div>';
+}
+
+function showAddKaryawan() { document.getElementById('modalKaryawan').style.display = 'block'; }
+function closeAddKaryawan() { document.getElementById('modalKaryawan').style.display = 'none'; }
+async function submitAddKaryawan() {
+  const data = { action:'addKaryawan', nama:document.getElementById('ak_nama').value, nik:document.getElementById('ak_nik').value, outlet:document.getElementById('ak_outlet').value, jabatan:document.getElementById('ak_jabatan').value, role:document.getElementById('ak_role').value, wa:document.getElementById('ak_wa').value };
+  if (!data.nama || !data.outlet) { showToast('Nama dan outlet wajib diisi'); return; }
+  showLoading(true);
+  const res = await apiPost(data);
+  if (res.ok) { showToast('✅ ' + res.msg); closeAddKaryawan(); loadAdminData(); }
+  else showToast('❌ ' + res.msg);
+  showLoading(false);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+// ===== API =====
+async function apiGet(params) {
+  const url = API + '?' + Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  const res = await fetch(url);
+  return res.json();
+}
+async function apiPost(data) {
+  const res = await fetch(API, {method:'POST', body:JSON.stringify(data)});
+  return res.json();
+}
+
+// ===== HELPERS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showHome() { showScreen('screenHome'); }
+function showLoading(show) { document.getElementById('loadingOverlay').className = 'loading-overlay' + (show?' show':''); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('phg_user');
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  pinVal = '';
+  updatePinDisplay();
+  showScreen('screenLogin');
+}
+
+// Auto-login dari localStorage
+const saved = localStorage.getItem('phg_user');
+if (saved) { currentUser = JSON.parse(saved); initUser(); }
+</script>
+</body>
+</html>
