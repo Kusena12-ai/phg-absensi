@@ -731,12 +731,33 @@ function switchTab(tab) {
 // ===== API =====
 async function apiGet(params) {
   const url = API + '?' + Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
-  const res = await fetch(url);
+  const res = await fetch(url, {redirect:'follow'});
   return res.json();
 }
 async function apiPost(data) {
-  const res = await fetch(API, {method:'POST', body:JSON.stringify(data)});
-  return res.json();
+  // Send WITHOUT photo first (avoid large payload redirect issue)
+  const dataNoFoto = {...data};
+  const foto = dataNoFoto.foto;
+  delete dataNoFoto.foto;
+  
+  // Encode as GET param to avoid Apps Script POST redirect body-loss
+  const url = API + '?payload=' + encodeURIComponent(JSON.stringify(dataNoFoto));
+  const res = await fetch(url, {redirect:'follow'});
+  const result = await res.json();
+  
+  // If success and has photo, upload foto separately
+  if (result.ok && foto && result.absensi_id !== undefined) {
+    try {
+      const fotoUrl = API + '?payload=' + encodeURIComponent(JSON.stringify({
+        action: 'uploadFoto',
+        absensi_id: result.absensi_id,
+        foto: foto,
+        tipe: data.action === 'checkIn' ? 'masuk' : 'pulang'
+      }));
+      await fetch(fotoUrl, {redirect:'follow'});
+    } catch(e) {} // foto upload failure doesn't block checkin
+  }
+  return result;
 }
 
 // ===== HELPERS =====
